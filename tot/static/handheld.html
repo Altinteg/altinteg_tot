@@ -117,7 +117,8 @@ $('send').onclick = async () => {
              j.lines.map(l => `${l[0]}  ${l[2]}  × ${l[3]}`).join('\n');
     } else if (task === 'receive') {
       j = await call(`/shipments/${$('sid').value}/receive`, { reads, user });
-      text = `Estado: ${j.status}\nRecebidas: ${j.matched}\nEm falta: ${j.missing.length}\nA mais: ${j.extra.length}`;
+      const estado = { received: 'Recebida completa', discrepancy: 'Divergência — faltam etiquetas' }[j.status] || j.status;
+      text = `${estado}\nRecebidas: ${j.matched}\nEm falta: ${j.missing.length}\nA mais: ${j.extra.length}`;
     } else if (task === 'count') {
       j = await call('/counts', { reads, user, location_id: $('loc').value });
       text = j.lines.map(l => `${l.item_code}  lidas ${l.physical} / esperadas ${l.expected}`).join('\n') +
