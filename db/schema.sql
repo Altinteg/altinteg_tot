@@ -47,7 +47,9 @@ CREATE TABLE lot (                              -- immutable after creation
   qty_encoded     integer NOT NULL DEFAULT 0 CHECK (qty_encoded <= qty_received),
   location_id     text NOT NULL REFERENCES location(location_id),
   created_at      timestamptz NOT NULL DEFAULT now(),
-  created_by      text NOT NULL
+  created_by      text NOT NULL,
+  description     text,                         -- label text, from the fatura line
+  company_prefix_len smallint CHECK (company_prefix_len BETWEEN 6 AND 12)
 );
 CREATE INDEX lot_fatura_idx ON lot (fatura_no, fatura_line);
 CREATE INDEX lot_batch_idx  ON lot (supplier_batch);
@@ -73,6 +75,7 @@ CREATE TABLE tag (
   status        tag_status NOT NULL,
   location_id   text NOT NULL REFERENCES location(location_id),
   last_seen_at  timestamptz NOT NULL,
+  missed_counts integer NOT NULL DEFAULT 0,       -- counts in a row not seen; 2 -> missing
   UNIQUE (gtin, serial)                         -- a serial is never reused
 );
 CREATE INDEX tag_lot_idx ON tag (lot_id);
@@ -86,7 +89,25 @@ CREATE TABLE shipment (
   atcud          text,
   status         text NOT NULL CHECK (status IN ('picking','in_transit','received','discrepancy')),
   created_at     timestamptz NOT NULL DEFAULT now(),
+  dispatched_at  timestamptz,
   received_at    timestamptz
+);
+
+CREATE TABLE shipment_tag (
+  shipment_id  text NOT NULL REFERENCES shipment(shipment_id),
+  epc          char(24) NOT NULL REFERENCES tag(epc),
+  received     boolean NOT NULL DEFAULT false,
+  PRIMARY KEY (shipment_id, epc)
+);
+
+CREATE TABLE export_file (                      -- every file sent to StoresAce, never twice
+  file_id       text PRIMARY KEY,
+  kind          text NOT NULL CHECK (kind IN ('transfer','delivery','waste','own_use','adjustment')),
+  location_id   text NOT NULL REFERENCES location(location_id),
+  document_ref  text,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  sha256        char(64) NOT NULL UNIQUE,
+  imported      boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE event (                            -- append-only, EPCIS 2.0 ObjectEvent shape

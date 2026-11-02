@@ -60,15 +60,15 @@ def create_lot(conn: sqlite3.Connection, fl: FaturaLine, location_id: str,
         conn.execute(
             "INSERT INTO lot (lot_id,item_code,gtin,supplier_id,fatura_no,fatura_line,"
             "supplier_batch,expiry_date,unit_cost,qty_received,qty_encoded,location_id,"
-            "created_at,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?,?)",
+            "created_at,created_by,description,company_prefix_len) VALUES (?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?)",
             (lot_id, fl.item_code, sgtin.normalize_gtin(fl.gtin), fl.supplier_id,
              fl.fatura_no, fl.line, batch, expiry.isoformat(), fl.unit_cost, qty,
-             location_id, now(), user))
+             location_id, now(), user, fl.description, fl.company_prefix_len))
     return lot_id
 
 
-def encode_run(conn: sqlite3.Connection, lot_id: str, count: int, description: str,
-               company_prefix_len: int, station_id: str, station_index: int,
+def encode_run(conn: sqlite3.Connection, lot_id: str, count: int, description: str | None,
+               company_prefix_len: int | None, station_id: str, station_index: int,
                user: str) -> tuple[list[str], str]:
     """Encode `count` labels for a lot. Returns (EPC list, ZPL job)."""
     lot = conn.execute("SELECT * FROM lot WHERE lot_id=?", (lot_id,)).fetchone()
@@ -78,6 +78,10 @@ def encode_run(conn: sqlite3.Connection, lot_id: str, count: int, description: s
         raise LabelStationError(
             f"lot {lot_id}: {lot['qty_encoded']} encoded of {lot['qty_received']}; "
             f"cannot encode {count} more")
+    description = description or lot["description"] or lot["item_code"]
+    company_prefix_len = company_prefix_len or lot["company_prefix_len"]
+    if not company_prefix_len:
+        raise LabelStationError("GS1 company prefix length is unknown for this lot")
     gtin14 = lot["gtin"]
     ean13 = gtin14[1:] if gtin14[0] == "0" else None
     if ean13 is None:

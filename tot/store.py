@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS lot (
   supplier_id TEXT NOT NULL, fatura_no TEXT NOT NULL, fatura_line INTEGER NOT NULL,
   supplier_batch TEXT, expiry_date TEXT NOT NULL, unit_cost REAL,
   qty_received INTEGER NOT NULL, qty_encoded INTEGER NOT NULL DEFAULT 0,
-  location_id TEXT NOT NULL, created_at TEXT NOT NULL, created_by TEXT NOT NULL);
+  location_id TEXT NOT NULL, created_at TEXT NOT NULL, created_by TEXT NOT NULL,
+  description TEXT, company_prefix_len INTEGER);
 CREATE TABLE IF NOT EXISTS serial_range (
   gtin TEXT NOT NULL, station_id TEXT NOT NULL, range_start INTEGER NOT NULL,
   range_end INTEGER NOT NULL, next_serial INTEGER NOT NULL,
@@ -28,7 +29,20 @@ CREATE TABLE IF NOT EXISTS tag (
   epc TEXT PRIMARY KEY, gtin TEXT NOT NULL, serial INTEGER NOT NULL,
   lot_id TEXT NOT NULL REFERENCES lot(lot_id), status TEXT NOT NULL,
   location_id TEXT NOT NULL, last_seen_at TEXT NOT NULL,
+  missed_counts INTEGER NOT NULL DEFAULT 0,
   UNIQUE (gtin, serial));
+CREATE TABLE IF NOT EXISTS shipment (
+  shipment_id TEXT PRIMARY KEY, from_location TEXT NOT NULL, to_location TEXT NOT NULL,
+  guia_no TEXT, atcud TEXT, status TEXT NOT NULL, created_at TEXT NOT NULL,
+  dispatched_at TEXT, received_at TEXT);
+CREATE TABLE IF NOT EXISTS shipment_tag (
+  shipment_id TEXT NOT NULL REFERENCES shipment(shipment_id),
+  epc TEXT NOT NULL REFERENCES tag(epc), received INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (shipment_id, epc));
+CREATE TABLE IF NOT EXISTS export_file (
+  file_id TEXT PRIMARY KEY, kind TEXT NOT NULL, location_id TEXT NOT NULL,
+  document_ref TEXT, created_at TEXT NOT NULL, sha256 TEXT NOT NULL UNIQUE,
+  imported INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS event (
   event_id TEXT PRIMARY KEY, type TEXT NOT NULL, biz_step TEXT NOT NULL,
   epc_list TEXT NOT NULL, location_id TEXT NOT NULL, event_time TEXT NOT NULL,

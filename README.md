@@ -4,7 +4,9 @@ Item-level identity, batch and expiry for the Onda Limão shop and its DC,
 alongside StoresAce (commercial owner) and ZoneSoft (fiscal owner).
 Spec: "The Order of Things — Onda Limão MVP spec" (Claude Docs).
 
-## Stage 1 (this code)
+## What's built
+
+### Stage 1 — label station
 
 | Module | What it does |
 | --- | --- |
@@ -16,14 +18,34 @@ Spec: "The Order of Things — Onda Limão MVP spec" (Claude Docs).
 | `tot/store.py` | SQLite store for the prototype (same names as `db/schema.sql`) |
 | `db/schema.sql` | Production PostgreSQL schema |
 
+### Stage 2 — handheld flows
+
+| Module | What it does |
+| --- | --- |
+| `tot/movements.py` | Ship (pick → dispatch with guia + ATCUD), receive (matched / missing / extra), cycle count (vs expected and StoresAce book stock; missing after 2 counts), waste and own use |
+| `tot/exports.py` | StoresAce 4-column import files (.xlsx); each file registered by SHA-256 so it can't be produced twice |
+| `tot/api.py` | HTTP API for the label station and handheld |
+| `tot/static/handheld.html` | Mobile screen in Portuguese: Expedir, Receber, Contar, Quebra. Zebra DataWedge (or any reader in keyboard mode) types EPCs into the read box |
+
 ## Run
 
 ```bash
-pip install pytest
+pip install -r requirements.txt
 python -m pytest -q
+
+# API + handheld screen
+TOT_DB=tot.db TOT_EXPORTS=exports uvicorn tot.api:app --host 0.0.0.0 --port 8000
+# then open http://<server>:8000/handheld on the handheld, API docs at /docs
+
 python -m tot.cli label --line examples/fatura_line.json \
   --scan "011560123456789917261120" --batch B77 --count 12 --out run.zpl
 ```
+
+### Handheld setup (Zebra)
+
+DataWedge profile for the browser: RFID input on, keystroke output, send
+ENTER after each tag, EPC as hex. Each trigger pull fills the read box; the
+screen counts unique tags and sends them in one batch.
 
 Send `run.zpl` to a Zebra RFID printer (raw TCP port 9100, or USB).
 
@@ -39,6 +61,6 @@ Send `run.zpl` to a Zebra RFID printer (raw TCP port 9100, or USB).
 
 ## Next stages
 
-2. Handheld (ship, receive, count) + shipments
-3. StoresAce sync (items, sales, stock) + 4-column export files
-4. Expiry alerts + dashboard
+3. StoresAce sync (items, sales, stock) and FEFO sale matching
+4. Expiry alerts + dashboard (book vs physical, shipments, exports to import)
+5. Native Android handheld if the browser + DataWedge route proves too limited
