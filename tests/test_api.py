@@ -25,7 +25,7 @@ def test_end_to_end_dc_to_store(client):
     assert len(pr["epcs"]) == 6 and pr["zpl"].count("^XA") == 6
     assert "Iogurte natural" in pr["zpl"]
 
-    sid = client.post("/shipments", json={"from_location": "DC", "to_location": "LOJA-1"}).json()["shipment_id"]
+    sid = client.post("/shipments", json={"from_location": "DC", "to_location": "STORE-1"}).json()["shipment_id"]
     pk = client.post(f"/shipments/{sid}/pick", json={"reads": "\n".join(pr["epcs"]), "user": "aliya"}).json()
     assert pk["added"] == 6 and pk["lines"] == [["DR011843", 1.1, "5601234567892", 6]]
 
@@ -35,11 +35,11 @@ def test_end_to_end_dc_to_store(client):
     rc = client.post(f"/shipments/{sid}/receive", json={"reads": "\n".join(pr["epcs"][:5])}).json()
     assert rc["status"] == "discrepancy" and rc["matched"] == 5 and len(rc["missing"]) == 1
 
-    ct = client.post("/counts", json={"location_id": "LOJA-1", "reads": "\n".join(pr["epcs"][:5]),
+    ct = client.post("/counts", json={"location_id": "STORE-1", "reads": "\n".join(pr["epcs"][:5]),
                                       "book": {"DR011843": 6}}).json()
     assert ct["lines"][0]["physical"] == 5 and ct["lines"][0]["difference"] == -1
 
-    ds = client.post("/dispose", json={"location_id": "LOJA-1", "reads": pr["epcs"][0],
+    ds = client.post("/dispose", json={"location_id": "STORE-1", "reads": pr["epcs"][0],
                                        "kind": "waste", "reason": "embalagem danificada"})
     assert ds.status_code == 200
 
@@ -51,4 +51,4 @@ def test_errors_are_400_with_reason(client):
 
 def test_handheld_page_served(client):
     r = client.get("/handheld")
-    assert r.status_code == 200 and "Leitor RFID" in r.text
+    assert r.status_code == 200 and "RFID Reader" in r.text

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="pt">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TOT · Leitor</title>
+<title>TOT · RFID Reader</title>
 <style>
   :root { --ink:#1a1a1a; --muted:#5f5e5a; --line:#d3d1c7; --accent:#f8d52d; --ok:#2e7d32; --bad:#b33000; }
   * { box-sizing: border-box; }
@@ -25,56 +25,79 @@
 </style>
 </head>
 <body>
-<header>TOT · Leitor RFID</header>
+<header data-i18n="title">TOT · RFID Reader</header>
 <main>
   <div class="tasks">
-    <button data-t="ship" class="on">Expedir</button>
-    <button data-t="receive">Receber</button>
-    <button data-t="count">Contar</button>
-    <button data-t="dispose">Quebra</button>
+    <button data-t="ship" class="on" data-i18n="ship">Ship</button>
+    <button data-t="receive" data-i18n="receive">Receive</button>
+    <button data-t="count" data-i18n="count">Count</button>
+    <button data-t="dispose" data-i18n="dispose">Waste</button>
   </div>
 
-  <label for="user">Utilizador</label>
-  <input id="user" placeholder="nome">
+  <label for="user" data-i18n="user">User</label>
+  <input id="user" data-i18n-ph="userPh" placeholder="name">
 
   <div data-for="ship">
-    <label for="from">De → Para</label>
-    <div style="display:flex;gap:8px"><input id="from" value="DC"><input id="to" value="LOJA-1"></div>
-    <button class="sub" id="newShip">Nova expedição</button>
+    <label for="from" data-i18n="fromTo">From → To</label>
+    <div style="display:flex;gap:8px"><input id="from" value="DC"><input id="to" value="STORE-1"></div>
+    <button class="sub" id="newShip" data-i18n="newShip">New shipment</button>
   </div>
   <div data-for="ship receive">
-    <label for="sid">Expedição</label>
+    <label for="sid" data-i18n="shipment">Shipment</label>
     <input id="sid" placeholder="SHP-…">
   </div>
   <div data-for="count dispose" class="hide">
-    <label for="loc">Local</label>
-    <input id="loc" value="LOJA-1">
+    <label for="loc" data-i18n="location">Location</label>
+    <input id="loc" value="STORE-1">
   </div>
   <div data-for="dispose" class="hide">
-    <label for="kind">Tipo</label>
-    <select id="kind"><option value="waste">Quebra</option><option value="own_use">Consumo próprio</option></select>
-    <label for="reason">Motivo</label>
-    <input id="reason" placeholder="ex.: validade expirada">
+    <label for="kind" data-i18n="type">Type</label>
+    <select id="kind"><option value="waste" data-i18n="waste">Waste</option><option value="own_use" data-i18n="ownUse">Own use</option></select>
+    <label for="reason" data-i18n="reason">Reason</label>
+    <input id="reason" data-i18n-ph="reasonPh" placeholder="e.g. expired">
   </div>
 
-  <label for="reads">Leituras (o leitor escreve aqui)</label>
+  <label for="reads" data-i18n="reads">Reads (the reader types here)</label>
   <textarea id="reads" autofocus></textarea>
-  <div class="count"><span id="n">0</span> etiquetas</div>
-  <button class="sub" id="clear">Limpar leituras</button>
+  <div class="count"><span id="n">0</span> <span data-i18n="tags">tags</span></div>
+  <button class="sub" id="clear" data-i18n="clear">Clear reads</button>
 
-  <button class="go" id="send">Enviar</button>
+  <button class="go" id="send" data-i18n="send">Send</button>
 
   <div data-for="ship">
-    <label for="guia">Guia de transporte</label>
+    <label for="guia" data-i18n="guia">Transport document (guia)</label>
     <input id="guia" placeholder="GT 2026/…">
     <label for="atcud">ATCUD</label>
     <input id="atcud">
-    <button class="sub" id="dispatch">Fechar e expedir</button>
+    <button class="sub" id="dispatch" data-i18n="dispatch">Close and dispatch</button>
   </div>
 
   <div id="out" class="hide"></div>
 </main>
 <script>
+// Strings live in one table so a second language is one more block (next step: 'pt').
+const STRINGS = {
+  en: {
+    title: 'TOT · RFID Reader', ship: 'Ship', receive: 'Receive', count: 'Count', dispose: 'Waste',
+    user: 'User', userPh: 'name', fromTo: 'From → To', newShip: 'New shipment', shipment: 'Shipment',
+    location: 'Location', type: 'Type', waste: 'Waste', ownUse: 'Own use', reason: 'Reason',
+    reasonPh: 'e.g. expired', reads: 'Reads (the reader types here)', tags: 'tags', clear: 'Clear reads',
+    send: 'Send', guia: 'Transport document (guia)', dispatch: 'Close and dispatch',
+    created: 'Shipment created: ', noReads: 'No reads.', needReason: 'Enter a reason.',
+    needGuia: 'Enter the transport document (guia) number.', added: 'Added', rejected: 'Rejected',
+    received: 'Received', missing: 'Missing', extra: 'Extra', complete: 'Received complete',
+    discrepancy: 'Discrepancy — tags missing', read: 'read', expected: 'expected',
+    misplaced: 'Misplaced', newlyMissing: 'Newly missing', wasteDone: 'Recorded. StoresAce file: ',
+    dispatched: 'Dispatched. Transfer file: ', defaultUser: 'operator', error: 'error'
+  }
+};
+const LANG = STRINGS[(new URLSearchParams(location.search).get('lang') || navigator.language || 'en').slice(0, 2)]
+  ? (new URLSearchParams(location.search).get('lang') || navigator.language).slice(0, 2) : 'en';
+const T = STRINGS[LANG];
+document.documentElement.lang = LANG;
+document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = T[el.dataset.i18n]);
+document.querySelectorAll('[data-i18n-ph]').forEach(el => el.placeholder = T[el.dataset.i18nPh]);
+
 const $ = id => document.getElementById(id);
 const EPC = /\b30[0-9A-F]{22}\b/g;
 let task = 'ship';
@@ -82,11 +105,12 @@ let task = 'ship';
 function unique() { return [...new Set(($('reads').value.toUpperCase().match(EPC) || []))]; }
 function refresh() { $('n').textContent = unique().length; }
 function show(text, ok) { const o = $('out'); o.textContent = text; o.className = ok ? 'ok' : 'bad'; }
+function user() { return $('user').value || T.defaultUser; }
 
 async function call(path, body) {
   const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({ detail: r.statusText }));
-  if (!r.ok) throw new Error(j.detail || 'erro');
+  if (!r.ok) throw new Error(j.detail || T.error);
   return j;
 }
 
@@ -102,41 +126,42 @@ $('clear').onclick = () => { $('reads').value = ''; refresh(); $('reads').focus(
 
 $('newShip').onclick = async () => {
   try { const j = await call('/shipments', { from_location: $('from').value, to_location: $('to').value });
-        $('sid').value = j.shipment_id; show('Expedição criada: ' + j.shipment_id, true); }
+        $('sid').value = j.shipment_id; show(T.created + j.shipment_id, true); }
   catch (e) { show(e.message, false); }
 };
 
 $('send').onclick = async () => {
-  const reads = unique().join('\n'), user = $('user').value || 'operador';
-  if (!reads) return show('Sem leituras.', false);
+  const reads = unique().join('\n');
+  if (!reads) return show(T.noReads, false);
   try {
     let j, text;
     if (task === 'ship') {
-      j = await call(`/shipments/${$('sid').value}/pick`, { reads, user });
-      text = `Adicionadas: ${j.added}\nRejeitadas: ${Object.keys(j.rejected).length}\n\n` +
+      j = await call(`/shipments/${$('sid').value}/pick`, { reads, user: user() });
+      text = `${T.added}: ${j.added}\n${T.rejected}: ${Object.keys(j.rejected).length}\n\n` +
              j.lines.map(l => `${l[0]}  ${l[2]}  × ${l[3]}`).join('\n');
     } else if (task === 'receive') {
-      j = await call(`/shipments/${$('sid').value}/receive`, { reads, user });
-      const estado = { received: 'Recebida completa', discrepancy: 'Divergência — faltam etiquetas' }[j.status] || j.status;
-      text = `${estado}\nRecebidas: ${j.matched}\nEm falta: ${j.missing.length}\nA mais: ${j.extra.length}`;
+      j = await call(`/shipments/${$('sid').value}/receive`, { reads, user: user() });
+      const state = { received: T.complete, discrepancy: T.discrepancy }[j.status] || j.status;
+      text = `${state}\n${T.received}: ${j.matched}\n${T.missing}: ${j.missing.length}\n${T.extra}: ${j.extra.length}`;
     } else if (task === 'count') {
-      j = await call('/counts', { reads, user, location_id: $('loc').value });
-      text = j.lines.map(l => `${l.item_code}  lidas ${l.physical} / esperadas ${l.expected}`).join('\n') +
-             `\n\nFora do sítio: ${j.misplaced.length}\nNovas em falta: ${j.newly_missing.length}`;
+      j = await call('/counts', { reads, user: user(), location_id: $('loc').value });
+      text = j.lines.map(l => `${l.item_code}  ${T.read} ${l.physical} / ${T.expected} ${l.expected}`).join('\n') +
+             `\n\n${T.misplaced}: ${j.misplaced.length}\n${T.newlyMissing}: ${j.newly_missing.length}`;
     } else {
-      if (!$('reason').value) return show('Indique o motivo.', false);
-      j = await call('/dispose', { reads, user, location_id: $('loc').value, kind: $('kind').value, reason: $('reason').value });
-      text = 'Registado. Ficheiro para StoresAce: ' + j.export_file;
+      if (!$('reason').value) return show(T.needReason, false);
+      j = await call('/dispose', { reads, user: user(), location_id: $('loc').value, kind: $('kind').value, reason: $('reason').value });
+      text = T.wasteDone + j.export_file;
     }
-    show(text, true); $('reads').value = ''; refresh();
+    const ok = !(task === 'receive' && j.status !== 'received') && !(task === 'count' && j.newly_missing.length);
+    show(text, ok); $('reads').value = ''; refresh();
   } catch (e) { show(e.message, false); }
 };
 
 $('dispatch').onclick = async () => {
-  if (!$('guia').value) return show('Indique o número da guia de transporte.', false);
+  if (!$('guia').value) return show(T.needGuia, false);
   try { const j = await call(`/shipments/${$('sid').value}/dispatch`,
-          { guia_no: $('guia').value, atcud: $('atcud').value || null, user: $('user').value || 'operador' });
-        show('Expedida. Ficheiro de transferência: ' + j.transfer_file, true); }
+          { guia_no: $('guia').value, atcud: $('atcud').value || null, user: user() });
+        show(T.dispatched + j.transfer_file, true); }
   catch (e) { show(e.message, false); }
 };
 </script>

@@ -25,7 +25,7 @@ Spec: "The Order of Things — Onda Limão MVP spec" (Claude Docs).
 | `tot/movements.py` | Ship (pick → dispatch with guia + ATCUD), receive (matched / missing / extra), cycle count (vs expected and StoresAce book stock; missing after 2 counts), waste and own use |
 | `tot/exports.py` | StoresAce 4-column import files (.xlsx); each file registered by SHA-256 so it can't be produced twice |
 | `tot/api.py` | HTTP API for the label station and handheld |
-| `tot/static/handheld.html` | Mobile screen in Portuguese: Expedir, Receber, Contar, Quebra. Zebra DataWedge (or any reader in keyboard mode) types EPCs into the read box |
+| `tot/static/handheld.html` | Mobile screen in English (Ship, Receive, Count, Waste); all text in one string table, so Portuguese is one added block. Zebra DataWedge (or any reader in keyboard mode) types EPCs into the read box |
 
 ## Run
 

@@ -26,7 +26,7 @@ def test_parse_reads_dedupes_and_filters():
 
 def test_ship_and_receive_full(env):
     conn, epcs, out = env
-    sid = movements.create_shipment(conn, "DC", "LOJA-1")
+    sid = movements.create_shipment(conn, "DC", "STORE-1")
     res = movements.pick(conn, sid, "\n".join(epcs[:6]))
     assert len(res.added) == 6 and not res.rejected
     assert movements.shipment_lines(conn, sid) == [["DR011843", 1.1, "5601234567892", 6]]
@@ -37,12 +37,12 @@ def test_ship_and_receive_full(env):
     r = movements.receive(conn, sid, epcs[:6], "deysi", "HH-2")
     assert r.status == "received" and len(r.matched) == 6 and not r.missing
     row = conn.execute("SELECT status, location_id FROM tag WHERE epc=?", (epcs[0],)).fetchone()
-    assert tuple(row) == ("in_stock", "LOJA-1")
+    assert tuple(row) == ("in_stock", "STORE-1")
 
 
 def test_receive_with_missing_then_late_receipt(env):
     conn, epcs, out = env
-    sid = movements.create_shipment(conn, "DC", "LOJA-1")
+    sid = movements.create_shipment(conn, "DC", "STORE-1")
     movements.pick(conn, sid, epcs[:4])
     movements.dispatch(conn, sid, "GT 2026/16", None, "aliya", None, out)
     r = movements.receive(conn, sid, epcs[:3] + [epcs[8]], "deysi", None)
@@ -53,7 +53,7 @@ def test_receive_with_missing_then_late_receipt(env):
 
 def test_dispatch_needs_guia_and_cannot_repeat(env):
     conn, epcs, out = env
-    sid = movements.create_shipment(conn, "DC", "LOJA-1")
+    sid = movements.create_shipment(conn, "DC", "STORE-1")
     movements.pick(conn, sid, epcs[:2])
     with pytest.raises(movements.MovementError):
         movements.dispatch(conn, sid, "", None, "aliya", None, out)
@@ -64,7 +64,7 @@ def test_dispatch_needs_guia_and_cannot_repeat(env):
 
 def test_cannot_pick_tag_from_other_location(env):
     conn, epcs, out = env
-    sid = movements.create_shipment(conn, "LOJA-1", "DC")
+    sid = movements.create_shipment(conn, "STORE-1", "DC")
     res = movements.pick(conn, sid, epcs[:1])
     assert epcs[0] in res.rejected
 
