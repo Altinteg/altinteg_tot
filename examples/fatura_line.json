@@ -1,0 +1,11 @@
+{
+  "fatura_no": "FT 2026A/8922",
+  "line": 3,
+  "supplier_id": "LACTOGAL",
+  "item_code": "DR011843",
+  "gtin": "5601234567892",
+  "description": "Iogurte natural 4x125g",
+  "qty": 24,
+  "unit_cost": 1.10,
+  "company_prefix_len": 7
+}
